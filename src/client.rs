@@ -1,5 +1,5 @@
 use crate::amount::Amount;
-use crate::transaction::{Transaction, TransactionType};
+use crate::transaction::{Transaction, TransactionDetails};
 use crate::{ClientId, TransactionId};
 use std::collections::{HashMap, hash_map};
 
@@ -7,8 +7,8 @@ use std::collections::{HashMap, hash_map};
 #[derive(Debug)]
 pub struct Client {
     id: ClientId,
-    transactions: HashMap<TransactionId, TransactionType>,
-    disputed_transactions: HashMap<TransactionId, TransactionType>,
+    transactions: HashMap<TransactionId, TransactionDetails>,
+    disputed_transactions: HashMap<TransactionId, TransactionDetails>,
     locked: bool,
 }
 
@@ -59,12 +59,12 @@ impl Client {
             );
             return;
         }
-        match &transaction.transaction_type {
-            TransactionType::Deposit(_) => {
+        match &transaction.transaction_details {
+            TransactionDetails::Deposit(_) => {
                 self.transactions
-                    .insert(transaction.transaction_id, transaction.transaction_type);
+                    .insert(transaction.transaction_id, transaction.transaction_details);
             }
-            TransactionType::Withdrawal(amount) => {
+            TransactionDetails::Withdrawal(amount) => {
                 let current_balance = self.available();
                 let tx_amount: f64 = (*amount).into();
                 if current_balance < tx_amount {
@@ -75,9 +75,9 @@ impl Client {
                     return;
                 }
                 self.transactions
-                    .insert(transaction.transaction_id, transaction.transaction_type);
+                    .insert(transaction.transaction_id, transaction.transaction_details);
             }
-            TransactionType::Dispute => {
+            TransactionDetails::Dispute => {
                 if let Some(previous_transaction) =
                     self.transactions.remove(&transaction.transaction_id)
                 {
@@ -85,7 +85,7 @@ impl Client {
                         .insert(transaction.transaction_id, previous_transaction);
                 };
             }
-            TransactionType::Resolve => {
+            TransactionDetails::Resolve => {
                 if let Some(previous_transaction) = self
                     .disputed_transactions
                     .remove(&transaction.transaction_id)
@@ -94,7 +94,7 @@ impl Client {
                         .insert(transaction.transaction_id, previous_transaction);
                 };
             }
-            TransactionType::Chargeback => {
+            TransactionDetails::Chargeback => {
                 if self
                     .disputed_transactions
                     .remove(&transaction.transaction_id)
@@ -110,15 +110,15 @@ impl Client {
     // disputed transaction list.
     fn sum_transactions(
         &self,
-        transactions: hash_map::Values<'_, TransactionId, TransactionType>,
+        transactions: hash_map::Values<'_, TransactionId, TransactionDetails>,
     ) -> Amount {
         let mut sum = Amount::default();
         for transaction in transactions {
             match transaction {
-                TransactionType::Deposit(amount) => {
+                TransactionDetails::Deposit(amount) => {
                     sum = sum + *amount;
                 }
-                TransactionType::Withdrawal(amount) => {
+                TransactionDetails::Withdrawal(amount) => {
                     sum = sum - *amount;
                 }
                 _ => {}
@@ -131,7 +131,7 @@ impl Client {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transaction::TransactionType::{Chargeback, Deposit, Dispute, Resolve, Withdrawal};
+    use crate::transaction::TransactionDetails::{Chargeback, Deposit, Dispute, Resolve, Withdrawal};
     const TEST_CLIENT_ID: ClientId = 1337;
 
     #[test]
@@ -197,11 +197,11 @@ mod tests {
     }
 
     fn test_transaction(
-        transaction_type: TransactionType,
+        transaction_details: TransactionDetails,
         transaction_id: TransactionId,
     ) -> Transaction {
         Transaction {
-            transaction_type,
+            transaction_details,
             client: TEST_CLIENT_ID,
             transaction_id,
         }

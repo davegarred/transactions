@@ -2,10 +2,11 @@ use crate::amount::Amount;
 use crate::{ClientId, TransactionId};
 use csv::StringRecord;
 use serde::Deserialize;
+use crate::error::TransactionParseError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Transaction {
-    pub transaction_type: TransactionType,
+    pub transaction_details: TransactionDetails,
     pub client: ClientId,
     pub transaction_id: TransactionId,
 }
@@ -21,7 +22,7 @@ pub(crate) struct CsvDeserializedTransaction {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TransactionType {
+pub enum TransactionDetails {
     Deposit(Amount),
     Withdrawal(Amount),
     Dispute,
@@ -29,7 +30,7 @@ pub enum TransactionType {
     Chargeback,
 }
 
-impl TryFrom<(&str, Option<f64>)> for TransactionType {
+impl TryFrom<(&str, Option<f64>)> for TransactionDetails {
     type Error = TransactionParseError;
 
     fn try_from((transaction_type, amount): (&str, Option<f64>)) -> Result<Self, Self::Error> {
@@ -39,10 +40,10 @@ impl TryFrom<(&str, Option<f64>)> for TransactionType {
             ("dispute", None) => Ok(Self::Dispute),
             ("resolve", None) => Ok(Self::Resolve),
             ("chargeback", None) => Ok(Self::Chargeback),
-            _ => Err(TransactionParseError(format!(
-                "Unknown transaction type: {}, amount: {:?}",
+            _ => Err(format!(
+                "Unknown transaction, type: {}, amount: {:?}",
                 transaction_type, amount
-            ))),
+            ).into()),
         }
     }
 }
@@ -55,9 +56,9 @@ impl TryFrom<StringRecord> for Transaction {
     fn try_from(value: StringRecord) -> Result<Self, TransactionParseError> {
         let headers = StringRecord::from(vec!["type", "client", "tx", "amount"]);
         let deser: CsvDeserializedTransaction = value.deserialize(Some(&headers))?;
-        let transaction_type = (deser.transaction_type.as_str(), deser.amount).try_into()?;
+        let transaction_details = (deser.transaction_type.as_str(), deser.amount).try_into()?;
         Ok(Self {
-            transaction_type,
+            transaction_details,
             client: deser.client,
             transaction_id: deser.transaction_id,
         })
@@ -66,18 +67,19 @@ impl TryFrom<StringRecord> for Transaction {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::TransactionParseError;
     use super::*;
     #[test]
     fn try_from_csv_type() {
         assert_eq!(
-            TransactionType::try_from(("deposit", Some(1.5))).unwrap(),
-            TransactionType::Deposit(1.5.into())
+            TransactionDetails::try_from(("deposit", Some(1.5))).unwrap(),
+            TransactionDetails::Deposit(1.5.into())
         );
         assert_eq!(
-            TransactionType::try_from(("withdrawal", Some(1.5))).unwrap(),
-            TransactionType::Withdrawal(1.5.into())
+            TransactionDetails::try_from(("withdrawal", Some(1.5))).unwrap(),
+            TransactionDetails::Withdrawal(1.5.into())
         );
-        assert!(TransactionType::try_from(("something_else", None)).is_err());
+        assert!(TransactionDetails::try_from(("something_else", None)).is_err());
     }
 
     #[test]
@@ -85,7 +87,7 @@ mod tests {
         assert_eq!(
             process_line(vec!["deposit", "1", "1", "1.0"]).unwrap(),
             Transaction {
-                transaction_type: TransactionType::Deposit(Amount::new(10000)),
+                transaction_details: TransactionDetails::Deposit(Amount::new(10000)),
                 client: 1,
                 transaction_id: 1,
             }
@@ -93,7 +95,7 @@ mod tests {
         assert_eq!(
             process_line(vec!["withdrawal", "2", "2", "12345.54321"]).unwrap(),
             Transaction {
-                transaction_type: TransactionType::Withdrawal(12345.5432.into()),
+                transaction_details: TransactionDetails::Withdrawal(12345.5432.into()),
                 client: 2,
                 transaction_id: 2,
             }
@@ -103,19 +105,5 @@ mod tests {
     fn process_line(values: Vec<&str>) -> Result<Transaction, TransactionParseError> {
         let record = StringRecord::from(values);
         Transaction::try_from(record)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TransactionParseError(String);
-
-impl TransactionParseError {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-}
-impl From<csv::Error> for TransactionParseError {
-    fn from(err: csv::Error) -> Self {
-        Self(err.to_string())
     }
 }
