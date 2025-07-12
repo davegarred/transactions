@@ -1,8 +1,8 @@
 use crate::amount::Amount;
+use crate::error::TransactionParseError;
 use crate::{ClientId, TransactionId};
 use csv::StringRecord;
 use serde::Deserialize;
-use crate::error::TransactionParseError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Transaction {
@@ -43,7 +43,8 @@ impl TryFrom<(&str, Option<f64>)> for TransactionDetails {
             _ => Err(format!(
                 "Unknown transaction, type: {}, amount: {:?}",
                 transaction_type, amount
-            ).into()),
+            )
+            .into()),
         }
     }
 }
@@ -67,8 +68,8 @@ impl TryFrom<StringRecord> for Transaction {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::TransactionParseError;
     use super::*;
+    use crate::error::TransactionParseError;
     #[test]
     fn try_from_csv_type() {
         assert_eq!(

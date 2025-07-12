@@ -44,6 +44,7 @@ impl Client {
         total.into()
     }
 
+    /// Is the account currently locked? (If so, all incoming transactions are ignored.)
     pub fn locked(&self) -> bool {
         self.locked
     }
@@ -131,7 +132,9 @@ impl Client {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transaction::TransactionDetails::{Chargeback, Deposit, Dispute, Resolve, Withdrawal};
+    use crate::transaction::TransactionDetails::{
+        Chargeback, Deposit, Dispute, Resolve, Withdrawal,
+    };
     const TEST_CLIENT_ID: ClientId = 1337;
 
     #[test]

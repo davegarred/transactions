@@ -24,7 +24,12 @@ impl Bank {
         for (line, result) in rdr.records().enumerate() {
             let record = match result {
                 Ok(record) => record,
-                Err(msg) => return Err(TransactionError::FileTransaction(line, msg.to_string().into())),
+                Err(msg) => {
+                    return Err(TransactionError::FileTransaction(
+                        line,
+                        msg.to_string().into(),
+                    ));
+                }
             };
             let transaction: Transaction = match record.try_into() {
                 Ok(transaction) => transaction,

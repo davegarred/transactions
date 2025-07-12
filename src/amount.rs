@@ -28,9 +28,14 @@ impl From<Amount> for f64 {
 fn test_amount_conversion() {
     assert_eq!(Amount::from(1.0).0, 10000);
     assert_eq!(Amount::from(1.5241).0, 15241);
-    assert_eq!(Amount::from(12345.5241).0, 123455241);
-    assert_eq!(Amount::from(-0.5241).0, -5241);
 }
+
+#[test]
+fn test_amount_conversion_four_places_precision() {
+    assert_eq!(Amount::from(12345.52413).0, 123455241);
+    assert_eq!(Amount::from(-0.52408).0, -5241);
+}
+
 #[test]
 fn test_amount_reverse_conversion() {
     assert_eq!(f64::from(Amount(10000)), 1.0);

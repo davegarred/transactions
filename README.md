@@ -14,7 +14,7 @@ I've used the 'flexible' feature of the csv package to handle the event if a fou
 absent from some transaction (e.g., no trailing comma on a dispute, resolve or chargeback).
 
 It felt way out of bounds but this would have been a great place to show off 
-[a library that I built](https://github.com/serverlesstechnology/cqrs)
+[a library that I built and maintain](https://github.com/serverlesstechnology/cqrs)
 that does just this sort of thing. That being said it uses CQRS which is very much overkill for domain logic this simple. 
 
 ## Response to "Scoring" questions 
@@ -32,5 +32,5 @@ the instructions.
 The deposit and withdrawal transactions remain in memory but each transaction is only 15 bytes so we've 
 got a lot of room to work with.
 - Maintainablity: On readability, I mean I think so, but you tell me. There are a number of additional 
-traits I'd implement for the `Amount` struct (e.g., `AddAssign`) if we were going to use that rather than
-something in a library for a prod application, but felt like overkill here. 
+traits I'd implement for the `Amount` struct (e.g., `AddAssign`) if we were going to use that for a prod 
+application (rather than swaping it out with a proper library), but those felt like overkill here. 

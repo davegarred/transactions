@@ -12,7 +12,6 @@ impl From<std::io::Error> for TransactionError {
     }
 }
 
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct TransactionParseError(String);
 

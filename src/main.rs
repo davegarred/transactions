@@ -21,10 +21,10 @@ pub type ClientId = u16;
 /// Uniquely identifies a transaction.
 pub type TransactionId = u32;
 
-/// Entrypoint expects a single argument for the filename containing the batch of transactions to be processed.
-/// Errors parsing the file or in converting the data to transactions will be written to stderr and
-/// the application will end with an exit code of 1.
-/// Any errors during transaction processing (Insufficient Funds) will not halt processing.
+// Entrypoint expects a single argument for the filename containing the batch of transactions to be processed.
+// Errors parsing the file or in converting the data to transactions will be written to stderr and
+// the application will end with an exit code of 1.
+// Any errors during transaction processing (Insufficient Funds) will not halt processing.
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 {
